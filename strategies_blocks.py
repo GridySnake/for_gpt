@@ -1,236 +1,451 @@
-# import dash_dangerously_set_inner_html
-from dash import html, dcc
+from dash import dcc, html
 # import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
-from datetime import date
-import pandas as pd
+import re
+from typing import List, Dict, Optional, Union
+from dash_iconify import DashIconify
+from functools import lru_cache
 import json
 
-df_coins = pd.read_csv('need_files/Symbols_mini.csv')
 
-with open('need_files/indicator_list.txt', 'r') as f:
-    indicators_dict = json.loads(f.read())
+OHLCV_COLUMNS = {"Open", "High", "Low", "Close", "Volume"}  # как у тебя
+OHLCV_DESCRIPTIONS = {
+    "Open": "Opening price",
+    "High": "Highest price",
+    "Low": "Lowest price",
+    "Close": "Closing price",
+    "Volume": "Trading volume",
+}
+ohlcv_set = set(OHLCV_DESCRIPTIONS.keys())
+ohlcv_set_lower = {c.lower() for c in ohlcv_set}
+compare_description = {
+    '>': 'Greater than',
+    '>=': 'Greater than or equal to',
+    '<': 'Less than',
+    '<=': 'Less than or equal to',
+    '=': 'Equal to'
+}
 
-    strategies_header = html.Header([
-        html.Div([
-            html.Nav([
-                html.A("Crypto Strategy", href="/home", className="navbar-brand"),
-                html.Ul([
-                    html.Li(html.A("Home", href="/home", className="nav-link")),
-                    html.Li(html.A("Strategies", href="/strategies", className="nav-link")),
-                    html.Li(html.A("History", href="/history", className="nav-link")),
-                    html.Li(html.A("Helpful Materials", href="/helpful_materials", className="nav-link")),
-                    html.Li(html.A("About Us", href="/about_us", className="nav-link")),
-                    html.Li(html.A("Logout", href="/logout", className="nav-link"))
-                ], className="navbar-nav ml-auto")
-            ], className="navbar navbar-expand-lg")
-        ], className="container")
-    ])
+COMPARISON_OPERATORS = [
+    {"value": ">", "label": ">", "tooltip": "Greater than"},
+    {"value": ">=", "label": ">=", "tooltip": "Greater than or equal to"},
+    {"value": "<", "label": "<", "tooltip": "Less than"},
+    {"value": "<=", "label": "<=", "tooltip": "Less than or equal to"},
+    {"value": "=", "label": "=", "tooltip": "Equal to"},
+]
 
-    card_style = {
-        'boxShadow': '0 4px 8px rgba(0,0,0,0.1)',
-        'borderRadius': '8px',
-        'padding': '24px',
-        'background': '#ffffff',
-        'width': 'fit-content',
-        'maxWidth': '400px',
-        'margin': '0 0 0 0',
-        'display': 'inline-block',
-        'verticalAlign': 'top'
-    }
 
-    input_style = {
-        'marginBottom': '2px',
-        'borderRadius': '4px',
-        'border': '1px solid #e0e0e0',
-        'padding': '12px',
-        'boxSizing': 'border-box'
-    }
 
-    strategies_choose_strategies_field = dmc.GridCol(
-        dmc.Card(
-            children=[
-                dmc.CardSection(
-                    dmc.Text("Choose strategy", ta="center", fw=700, size="lg"),
-                    withBorder=True, inheritPadding=True
-                ),
-                dmc.CardSection(
-                    dmc.Stack([
-                        dcc.Dropdown(
-                            df_coins['Symbol'].unique(),
-                            'ETH-USD',
-                            id='dropdown_coin',
-                            style=input_style
-                        ),
-                        dcc.DatePickerRange(
-                            id='date_picker',
-                            min_date_allowed=date(2009, 1, 1),
-                            max_date_allowed=date.today(),
-                            start_date=date(2022, 1, 1),
-                            end_date=date.today(),
-                            style=input_style
-                        ),
-                        dcc.Dropdown(
-                            id='dropdown_interval',
-                            options=[{'label': i, 'value': i} for i in
-                                     '1,3,5,15,30,60,120,240,360,720,D,W,M'.split(',')],
-                            value='1d',
-                            style=input_style
-                        ),
-                        dcc.Dropdown(
-                            id='dropdown_indicators',
-                            options=[{'label': indicator, 'value': indicator} for indicator in indicators_dict.keys()],
-                            value=[],
-                            multi=True,
-                            style=input_style
-                        ),
-                        dmc.Button(
-                            'Submit',
-                            id='submit_button',
-                            n_clicks=0,
-                            variant="filled",
-                            color="blue"
-                        )
-                    ])
-                )
-            ],
-            shadow="sm",
-            radius="md",
-            withBorder=True,
-            style=card_style
-        ),
-        span=4  # <-- именно на GridCol, не на Grid
+tooltip_styles = {
+            "tooltip": {
+                "backgroundColor": "#ffffff",
+                "color": "#111111",
+                "border": "1px solid #f59f00",
+                "boxShadow": "0 2px 8px rgba(245,159,0,0.3)",
+                "borderRadius": "8px",
+                "fontSize": "13px",
+                "padding": "6px 10px",
+            },
+            "arrow": {
+                "backgroundColor": "#ffffff",
+                "border": "1px solid #f59f00",
+            }}
+
+
+def _parse_idx_from_value(option_value: str, base: str) -> Optional[str]:
+    """
+    Пытаемся вытащить индекс инстанса из value, например:
+    'ADX_10 period ADX.' -> '10'; 'SMA_close' -> None
+    """
+    if not option_value or not base:
+        return None
+    m = re.search(rf"{re.escape(base)}_(\d+)", option_value)
+    return m.group(1) if m else None
+
+
+def _format_indicator_params_text(raw_or_value: str, param_source: Optional[Dict]) -> Optional[str]:
+    if not raw_or_value or not param_source:
+        return None
+
+    base = re.split(r'[_\s(]', raw_or_value)[0]
+    if not base:
+        return None
+
+    # индекс из raw ("ADX__2__...") или из value ("ADX_14 ...")
+    idx_from_raw = None
+    if "__" in raw_or_value:
+        parts = raw_or_value.split("__")
+        if len(parts) >= 2 and parts[1].isdigit():
+            idx_from_raw = parts[1]
+
+    idx_from_value = None
+    m = re.search(rf"{re.escape(base)}_(\d+)", raw_or_value)
+    if m:
+        idx_from_value = m.group(1)
+
+    idx = idx_from_raw or idx_from_value
+
+    # плоские ключи ADX__{idx}__param
+    flat_related = {k: v for k, v in (param_source or {}).items()
+                    if isinstance(k, str) and k.startswith(base + "__")}
+    grouped = {}
+    for k, v in flat_related.items():
+        try:
+            _, gidx, param = k.split("__", 2)
+        except ValueError:
+            continue
+        grouped.setdefault(gidx, {})[param] = v
+
+    params = None
+    if idx and idx in grouped:
+        params = grouped[idx]
+    elif grouped:
+        params = next(iter(grouped.values()))
+
+    # запасной источник
+    if params is None:
+        ip = param_source.get("indicator_params") if isinstance(param_source, dict) else None
+        if isinstance(ip, dict):
+            node = ip.get(base)
+            if isinstance(node, dict):
+                if idx and isinstance(node.get(idx), dict):
+                    params = node[idx]
+                else:
+                    for v in node.values():
+                        if isinstance(v, dict):
+                            params = v
+                            break
+            elif isinstance(node, list):
+                for it in node:
+                    if isinstance(it, dict):
+                        params = it
+                        break
+
+    if not isinstance(params, dict) or not params:
+        return base
+
+    clean = {k: v for k, v in params.items() if v not in ("", None, "None")}
+    period = clean.pop("period", None)
+
+    if period is not None:
+        tail = (", " + ", ".join(f"{k} {v}" for k, v in clean.items())) if clean else ""
+        return f"{base} (period {period}{tail})"
+
+    inside = ", ".join(f"{k} {v}" for k, v in clean.items())
+    return f"{base} ({inside})" if inside else base
+
+
+def _pretty_option_label(value: str, label: str, param_source: Optional[Dict]) -> str:
+    """
+    Текст, который видит пользователь в РАСКРЫТОМ списке.
+    - OHLCV: показываем исходный label ('Open')
+    - Индикатор: красивый вид через _format_indicator_params_text(...)
+    """
+    if isinstance(value, str) and value.lower() in OHLCV_COLUMNS:
+        return label or value
+    pretty = _format_indicator_params_text(value, param_source)
+    return pretty or (label or value)
+
+
+def _short_from_any(value: Optional[str], param_source: Optional[Dict] = None) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+
+    # RAW: "ADX__1__period" -> "ADX 1"
+    m = re.match(r'^([A-Za-z][A-Za-z0-9]*)__(\d+)__', value)
+    if m:
+        return f"{m.group(1)} {m.group(2)}"
+
+    # Уже короткий: "ADX 1"
+    m = re.match(r'^([A-Za-z][A-Za-z0-9]*)\s+(\d+)$', value)
+    if m:
+        return f"{m.group(1)} {m.group(2)}"
+
+    # Длинный с периодом: "ADX_12 period ..." -> ищем индекс по param_source
+    m = re.match(r'^([A-Za-z][A-Za-z0-9]*)_(\d+(?:\.\d+)?)\s+period\b', value)
+    if m and isinstance(param_source, dict):
+        ind, period_str = m.group(1), m.group(2)
+
+        def norm(x):
+            try:
+                fx = float(x)
+                return str(int(fx)) if fx.is_integer() else str(fx)
+            except Exception:
+                return str(x)
+
+        tgt = norm(period_str)
+        for k, v in param_source.items():
+            if isinstance(k, str) and k.startswith(f"{ind}__") and k.endswith("__period"):
+                if norm(v) == tgt:
+                    return f"{ind} {k.split('__')[1]}"
+
+    return None
+
+
+def _short_label_from_raw(raw: str) -> str:
+    """
+    'ADX__1__period' -> 'ADX 1'
+    если формат другой — вернём исходное.
+    """
+    if isinstance(raw, str) and "__" in raw:
+        parts = raw.split("__")
+        if len(parts) >= 2 and parts[1]:
+            return f"{parts[0]} {parts[1]}"
+    return str(raw)
+
+
+def _short_indicator_label(val: str, param_source: Optional[Dict]) -> str:
+    return _short_from_any(val, param_source) or (val if isinstance(val, str) else str(val))
+
+
+def _select_with_tooltip(
+    component_id: dict,
+    data: List[Dict],
+    placeholder: str,
+    selected_label: Optional[str],
+    style: Optional[dict],
+    param_source: Optional[Dict],
+):
+    button_text = selected_label or placeholder
+
+    # только для тултипа на самой кнопке:
+    tooltip_for_selected = None
+    if selected_label:
+        # пробегаемся по данным, но не строим весь options_src
+        for opt in (data or []):
+            if opt.get("label") == selected_label:
+                tooltip_for_selected = opt.get("label")
+                break
+
+    button_component = dmc.Button(
+        button_text,
+        id={**component_id, "role": "input"},
+        n_clicks=0,
+        fullWidth=True,
+        variant="outline",
+        style=style,
     )
+    if tooltip_for_selected:
+        button_component = dmc.Tooltip(
+            label=tooltip_for_selected,
+            withArrow=True,
+            position="top",
+            children=button_component,
+            styles=tooltip_styles
+        )
 
-    # === BLOCK 2: Graphs ===
-    strategies_graphs = dcc.Loading(
-        [
-            html.H4(id='no_data_message', children=['Sorry. There is no data'], style={'visibility': 'hidden'}),
-            html.H4(id='header', children=[]),
-            html.Div(id='graph_strategy_div', children=[]),
-            html.Div(id='graph_coin_div', children=[]),
-            html.Div(id='graphs_indicators', children=[])
+    return dmc.Popover(
+        id={**component_id, "role": "popover"},
+        position="bottom-start",
+        withArrow=True,
+        shadow="md",
+        children=[
+            dmc.PopoverTarget(button_component),
+            dmc.PopoverDropdown([
+                dmc.TextInput(
+                    id={**component_id, "role": "search"},
+                    placeholder="Search…",
+                    size="xs",
+                    mb=10,
+                ),
+                html.Div(
+                    id={**component_id, "role": "options"},
+                    style={"display": "flex", "flexDirection": "column", "rowGap": "6px"},
+                ),
+                # ⚡️ теперь в Store кладём только исходные данные
+                dcc.Store(id={**component_id, "role": "options-src"}, data={
+                    "data": data,
+                    "param_source": param_source
+                }),
+            ]),
         ],
-        target_components={
-            'no_data_message': 'children',
-            'header': 'children',
-            'graph_strategy_div': 'children',
-            'graph_coin_div': 'children',
-            'graphs_indicators': 'children'
-        }
     )
 
-    # === BLOCK 3: Input parameters ===
-    # === BLOCK 3: Input parameters for indicators ===
-    strategies_input_parameters_for_indicators = dmc.GridCol(
-        dmc.Card(
-            id='card_indicators_input',
-            children=[
-                dmc.CardSection(
-                    dmc.Button(
-                        "Clear ALL",
-                        id="clear_all_global",
-                        n_clicks=0,
-                        color="gray",
-                        variant="light",
-                        size="xs",
-                        style={"marginBottom": "10px"}
-                    ),
-                    withBorder=True, inheritPadding=True
+
+def _freeze(obj):
+    """Превращает dict/list в JSON-строку для кэширования"""
+    if obj is None:
+        return None
+    if isinstance(obj, (dict, list)):
+        return json.dumps(obj, sort_keys=True)
+    return obj
+
+
+@lru_cache(maxsize=32)
+def build_options_template(data_str: str, param_source_str: str):
+    """
+    Возвращает "чистый" список опций (label + tooltip), общий для всех dropdown'ов
+    — без parent, чтобы кэш мог сработать для одинаковых data/param_source.
+    """
+    data = json.loads(data_str) if data_str else []
+    param_source = json.loads(param_source_str) if param_source_str else None
+
+    options = []
+    for opt in (data or []):
+        full_val = opt.get("value")
+        raw_key = opt.get("raw") or full_val
+        base_lbl = opt.get("label", full_val)
+
+        if isinstance(full_val, str) and (full_val in OHLCV_COLUMNS or full_val.lower() in ohlcv_set_lower):
+            display_label = base_lbl or full_val
+            tip = OHLCV_DESCRIPTIONS.get(full_val) or OHLCV_DESCRIPTIONS.get(full_val.capitalize(), "")
+        elif full_val in compare_description:
+            display_label = base_lbl or full_val
+            tip = compare_description.get(full_val) or ""
+        elif full_val == "custom":
+            display_label = base_lbl or full_val
+            tip = ""
+        else:
+            display_label = _short_label_from_raw(raw_key)
+            tip = _format_indicator_params_text(raw_key, param_source) or base_lbl or full_val
+
+        options.append({
+            "value": full_val,
+            "label": display_label,
+            "display": display_label,
+            "tooltip": tip or "",
+            "is_plain": full_val == "custom",
+        })
+
+    return options
+
+
+def build_options_src(component_id: dict, data: list, param_source: dict):
+    """
+    Берёт "шаблонные" опции из кэша и добавляет уникальный parent для конкретного dropdown.
+    """
+    data_str = json.dumps(data, sort_keys=True) if data else ""
+    param_source_str = json.dumps(param_source, sort_keys=True) if param_source else ""
+    base_options = build_options_template(data_str, param_source_str)
+
+    parent_id = {k: str(v) for k, v in {**component_id, "role": "options"}.items()}
+    return [{**opt, "parent": parent_id} for opt in base_options]
+
+
+def generate_conditions_block_group(
+    strategy_id,
+    condition_type,
+    output_options,
+    conditions_count,
+    selected_values=None,   # ← СТОР выбраных значений (conditions_store_inputs)
+    param_source=None       # ← Источник параметров индикаторов для тултипов
+):
+    sid = str(strategy_id)
+    blocks = [dmc.Text(f'{condition_type.capitalize()} conditions')]
+
+    # стандартные OHLCV
+    ohlcv_data = [{'label': c, 'value': c} for c in OHLCV_COLUMNS]
+
+    # только данные (без кастома)
+    data_columns_only = (output_options or []) + ohlcv_data
+
+    selected_values = selected_values or {}
+
+    for i in range(int(conditions_count)):
+        key = f"{sid}_{condition_type}_{i}"
+        vals = selected_values.get(key, {})
+
+        left_label = vals.get('column_label')
+        right_label = vals.get('column_or_custom_label')
+
+        blocks.append(
+            html.Div([
+                # Для столбца
+                _select_with_tooltip(
+                    component_id={'type': 'column_dropdown', 'strategy': sid, 'condition': condition_type, 'index': i},
+                    data=data_columns_only,
+                    placeholder="Compare column",
+                    selected_label=left_label,
+                    style={**tooltip_styles, 'flex': '1', 'flexShrink': '1', 'minWidth': '150px',
+                           'marginRight': '10px'},
+                    param_source=param_source,
                 ),
-                dmc.CardSection(
-                    html.Div([], id='input_parameters_for_indicators')
+
+                # Операторы сравнения
+                _select_with_tooltip(
+                    component_id={
+                        "type": "comparison_operator",
+                        "strategy": sid,
+                        "condition": condition_type,
+                        "index": i,
+                    },
+                    data=COMPARISON_OPERATORS,  # ⚡ теперь берём глобально
+                    placeholder="Comparison operator",
+                    selected_label=vals.get("comparison_operator_label"),
+                    style={
+                        **tooltip_styles,
+                        "flex": "1",
+                        "flexShrink": "1",
+                        "minWidth": "120px",
+                        "marginRight": "10px",
+                    },
+                    param_source=param_source,
+                ),
+
+                # Для столбца или значения с добавлением "Custom value"
+                _select_with_tooltip(
+                    component_id={'type': 'column_or_custom_dropdown', 'strategy': sid, 'condition': condition_type,
+                                  'index': i},
+                    data=[
+                        *data_columns_only,  # Список доступных столбцов
+                        {'value': 'custom', 'label': 'Custom value', 'tooltip': 'Enter a custom value'}
+                        # Добавляем опцию "Custom value"
+                    ],
+                    placeholder="Compare column or value",
+                    selected_label=right_label,
+                    style={**tooltip_styles, 'flex': '1', 'flexShrink': '1', 'minWidth': '150px',
+                           'marginRight': '10px'},
+                    param_source=param_source,
+                ),
+
+                # Custom input (показывать только если выбрана опция "Custom value")
+                dcc.Input(
+                    id={'type': 'custom_input', 'strategy': sid, 'condition': condition_type, 'index': i},
+                    type='number',
+                    placeholder='Enter custom value',
+                    className='form-control',
+                    style={
+                        'flex': '1',  # Даем возможность динамически изменяться по ширине
+                        'flexShrink': '1',  # Даем возможность сжиматься
+                        'minWidth': '120px',  # Минимальная ширина
+                        'marginRight': '10px',
+                        'display': 'none' if (vals.get('column_or_custom') != 'custom') else 'inline-block',
+                        # Скрываем, если не выбран "Custom value"
+                    },
+                    value=vals.get('custom')
                 )
-            ],
-            style={'display': 'none'}
-        ),
-        span=3
+            ], style={
+                'display': 'flex',  # Flexbox для горизонтального расположения
+                'gap': '15px',  # Отступы между элементами
+                'alignItems': 'center',  # Выравнивание по центру
+                'marginBottom': '15px',  # Отступ снизу
+                'flexWrap': 'wrap',  # Позволяет элементам переходить на новую строку, если нужно
+            })
+
+        )
+
+        # Кнопки управления
+    buttons = [dmc.Button("Add condition",
+                id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'add', 'condition': condition_type},
+                color="green", size="xs", variant="filled"
+            ),
+               dmc.Button(f"Clear {condition_type} conditions",
+                          id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'clear',
+                              'condition': condition_type},
+                          color="gray", size="xs", variant="light"
+                          )
+               ]
+    if conditions_count > 1:
+        buttons.append(
+            dmc.Button("Remove condition",
+                   id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'remove',
+                       'condition': condition_type},
+                   color="red", size="xs", variant="filled"
+                   )
+        )
+    blocks.append(
+        html.Div(buttons, style={'display': 'flex','justifyContent': 'space-between','alignItems': 'center','marginBottom': '20px'})
     )
 
-    # === BLOCK 4: Strategies and conditions ===
-    strategies_strategies_and_conditions_buy_sell = dmc.GridCol(
-        dmc.Card(
-            children=[
-                dmc.CardSection(
-                    html.Div(
-                        id='clear_all_container',
-                        children=dmc.Button(
-                            "Clear ALL",
-                            id={'type': 'clear_all_conditions', 'strategy': 'ALL'},
-                            n_clicks=0,
-                            color="gray",
-                            variant="light",
-                            size="xs",
-                            style={"marginBottom": "10px"}
-                        ),
-                        style={'display': 'none'}
-                    ),
-                    withBorder=True, inheritPadding=True
-                ),
-                dmc.CardSection(
-                    html.Div(id='strategies_container', children=[])
-                ),
-                dmc.CardSection(
-                    dmc.Group(
-                        [
-                            dmc.Button(
-                                'Add strategy',
-                                id='add_strategy',
-                                n_clicks=0,
-                                color="green",
-                                variant="filled",
-                                size="sm",
-                                style={'marginBottom': '10px', 'display': 'none'}
-                            ),
-                            dmc.Button(
-                                'Remove strategy',
-                                id='remove_strategy',
-                                n_clicks=0,
-                                color="red",
-                                variant="filled",
-                                size="sm",
-                                style={'marginBottom': '10px', 'display': 'none'}
-                            )
-                        ],
-                        justify="space-between",  # кнопки разнесены по краям
-                        gap="md",
-                        style={"marginBottom": "20px"}
-                    ),
-                    inheritPadding=True
-                )
-            ],
-            shadow="sm",
-            radius="md",
-            withBorder=True
-        ),
-        span=5,
-        id='parameters_conditions_block'
-    )
+    return blocks
 
-    strategies_footer = dcc.Markdown("""
-        <style>
-            body, html {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .container {
-                flex: 1; /* Занимает всё доступное пространство */
-                padding: 30px 0;
-            }
-
-            p {
-                background-color: #333; 
-                color: #fff;
-                padding: 20px 0;
-                text-align: center;
-                margin: 0; /* Убираем стандартные отступы */
-            }
-        </style>
-        <div class="container">
-        </div>
-        <p>&copy; 2025 Crypto Strategy App | All Rights Reserved</p>
-        """, dangerously_allow_html=True)
