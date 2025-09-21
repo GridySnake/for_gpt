@@ -350,18 +350,18 @@ def generate_conditions_block_group(
 
         blocks.append(
             html.Div([
-                # Для столбца
+                # Column selector (left)
                 _select_with_tooltip(
                     component_id={'type': 'column_dropdown', 'strategy': sid, 'condition': condition_type, 'index': i},
                     data=data_columns_only,
-                    placeholder="Compare column",
+                    placeholder="Column",
                     selected_label=left_label,
-                    style={**tooltip_styles, 'flex': '1', 'flexShrink': '1', 'minWidth': '150px',
-                           'marginRight': '10px'},
+                    style={**tooltip_styles, 'flex': '1.2', 'flexShrink': '1', 'minWidth': '120px',
+                           'marginRight': '8px'},
                     param_source=param_source,
                 ),
 
-                # Операторы сравнения
+                # Comparison operator (middle)
                 _select_with_tooltip(
                     component_id={
                         "type": "comparison_operator",
@@ -369,82 +369,74 @@ def generate_conditions_block_group(
                         "condition": condition_type,
                         "index": i,
                     },
-                    data=COMPARISON_OPERATORS,  # ⚡ теперь берём глобально
-                    placeholder="Comparison operator",
+                    data=COMPARISON_OPERATORS,
+                    placeholder="Operator",
                     selected_label=vals.get("comparison_operator_label"),
                     style={
                         **tooltip_styles,
-                        "flex": "1",
+                        "flex": "0.8",
                         "flexShrink": "1",
-                        "minWidth": "120px",
-                        "marginRight": "10px",
+                        "minWidth": "80px",
+                        "marginRight": "8px",
                     },
                     param_source=param_source,
                 ),
 
-                # Для столбца или значения с добавлением "Custom value"
+                # Value selector (right)
                 _select_with_tooltip(
                     component_id={'type': 'column_or_custom_dropdown', 'strategy': sid, 'condition': condition_type,
                                   'index': i},
                     data=[
-                        *data_columns_only,  # Список доступных столбцов
-                        {'value': 'custom', 'label': 'Custom value', 'tooltip': 'Enter a custom value'}
-                        # Добавляем опцию "Custom value"
+                        *data_columns_only,
+                        {'value': 'custom', 'label': 'Custom', 'tooltip': 'Enter custom value'}
                     ],
-                    placeholder="Compare column or value",
+                    placeholder="Value",
                     selected_label=right_label,
-                    style={**tooltip_styles, 'flex': '1', 'flexShrink': '1', 'minWidth': '150px',
-                           'marginRight': '10px'},
+                    style={**tooltip_styles, 'flex': '1.2', 'flexShrink': '1', 'minWidth': '120px',
+                           'marginRight': '8px'},
                     param_source=param_source,
                 ),
 
-                # Custom input (показывать только если выбрана опция "Custom value")
+                # Custom input (inline with dropdown)
                 dcc.Input(
                     id={'type': 'custom_input', 'strategy': sid, 'condition': condition_type, 'index': i},
                     type='number',
-                    placeholder='Enter custom value',
-                    className='form-control',
-                    style={
-                        'flex': '1',  # Даем возможность динамически изменяться по ширине
-                        'flexShrink': '1',  # Даем возможность сжиматься
-                        'minWidth': '120px',  # Минимальная ширина
-                        'marginRight': '10px',
-                        'display': 'none' if (vals.get('column_or_custom') != 'custom') else 'inline-block',
-                        # Скрываем, если не выбран "Custom value"
-                    },
+                    placeholder='Value',
+                    className='custom_value' if (vals.get('column_or_custom') == 'custom') else 'hidden',
                     value=vals.get('custom')
                 )
             ], style={
-                'display': 'flex',  # Flexbox для горизонтального расположения
-                'gap': '15px',  # Отступы между элементами
-                'alignItems': 'center',  # Выравнивание по центру
-                'marginBottom': '15px',  # Отступ снизу
-                'flexWrap': 'wrap',  # Позволяет элементам переходить на новую строку, если нужно
+                'display': 'flex',
+                'gap': '8px',
+                'alignItems': 'center',
+                'marginBottom': '12px',
+                'flexWrap': 'nowrap',
+                'width': '100%'
             })
 
         )
 
-        # Кнопки управления
-    buttons = [dmc.Button("Add condition",
-                id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'add', 'condition': condition_type},
-                color="green", size="xs", variant="filled"
-            ),
-               dmc.Button(f"Clear {condition_type} conditions",
-                          id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'clear',
-                              'condition': condition_type},
-                          color="gray", size="xs", variant="light"
-                          )
-               ]
-    if conditions_count > 1:
-        buttons.append(
-            dmc.Button("Remove condition",
-                   id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'remove',
-                       'condition': condition_type},
-                   color="red", size="xs", variant="filled"
-                   )
-        )
+        # Control buttons
+        buttons = [dmc.Button("Add",
+                    id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'add', 'condition': condition_type},
+                    color="green", size="xs", variant="filled"
+                ),
+                   dmc.Button(f"Clear {condition_type}",
+                              id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'clear',
+                                  'condition': condition_type},
+                              color="gray", size="xs", variant="light"
+                              )
+                   ]
+        if conditions_count > 1:
+            buttons.append(
+                dmc.Button("Remove",
+                       id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'remove',
+                           'condition': condition_type},
+                       color="red", size="xs", variant="filled"
+                       )
+            )
     blocks.append(
-        html.Div(buttons, style={'display': 'flex','justifyContent': 'space-between','alignItems': 'center','marginBottom': '20px'})
+        html.Div(buttons, style={'display': 'flex','justifyContent': 'space-between','alignItems': 'center','marginBottom': '15px', 'gap': '8px'})
     )
 
     return blocks
