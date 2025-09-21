@@ -65,7 +65,19 @@ footer {
 .card {
     border-radius: 15px;
 }
+/* карточка стратегии */
+.strategy-card {
+  margin-bottom: 16px;
+}
 
+/* внутренние блоки */
+.strategy-side-header { margin-bottom: 8px; }
+.condition-rows > * { margin-bottom: 8px; }
+.condition-rows > *:last-child { margin-bottom: 0; }
+
+/* контейнер карточек */
+.strategies-cards { gap: 0; }
+.strategies-global-actions { margin-top: 12px; }
 .custom_value {
     flex: 1;
     min-width: 100px;
@@ -452,4 +464,28 @@ footer {
         width: 100% !important;
     }
 }
+
+/* контейнер карточек в колонке стратегий */
+.s-cards { width: 100%; }
+
+/* обёртка, чтобы карточка была чуть уже колонки (как в других столбцах) */
+.s-card-wrap { padding: 0 10px; }                 /* регулируй 10px под себя */
+
+/* сама карточка растягивается на всю доступную ширину */
+.s-card { width: 100%; }
+
+/* внутренние вертикальные отступы — компактные */
+.s-card-inner { gap: 6px; }
+
+/* шапка секции buy/sell */
+.s-side-header { margin-bottom: 4px; }
+
+/* расстояние между строками условий — компактнее */
+.s-cond-rows { gap: 6px; }
+
+/* делители между buy/sell — короткие отступы */
+.s-div { margin-top: 6px !important; margin-bottom: 6px !important; }
+
+/* на всякий случай уберём любые прежние ограничения ширины старого класса */
+.strategy-card { max-width: none; width: 100%; }  /* если в старом css задавалась узкая ширина */
 
