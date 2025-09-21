@@ -212,7 +212,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                 }
             ),
             dmc.CardSection(
-                html.Div(id='strategies_container', children=[])
+                html.Div(id="strategies_cards_container", className="strategy-conditions")
             ),
             dmc.CardSection(
                 dmc.Group(
