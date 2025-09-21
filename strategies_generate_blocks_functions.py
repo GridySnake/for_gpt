@@ -233,7 +233,8 @@ def _select_with_tooltip(
             children=button_component,
             styles=tooltip_styles
         )
-
+    print('data', data)
+    print('param_source', param_source)
     return dmc.Popover(
         id={**component_id, "role": "popover"},
         position="bottom-start",
@@ -331,7 +332,7 @@ def generate_conditions_block_group(
     param_source=None       # ← Источник параметров индикаторов для тултипов
 ):
     sid = str(strategy_id)
-    blocks = [dmc.Text(f'{condition_type.capitalize()} conditions')]
+    blocks = []
 
     # стандартные OHLCV
     ohlcv_data = [{'label': c, 'value': c} for c in OHLCV_COLUMNS]
@@ -419,7 +420,7 @@ def generate_conditions_block_group(
         # Control buttons
         buttons = [dmc.Button("Add",
                     id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'add', 'condition': condition_type},
-                    color="green", size="xs", variant="filled"
+                    color="green", size="xs", variant="light"
                 ),
                    dmc.Button(f"Clear {condition_type}",
                               id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'clear',
@@ -432,11 +433,11 @@ def generate_conditions_block_group(
                 dmc.Button("Remove",
                        id={'type': 'modify_condition', 'strategy': str(strategy_id), 'action': 'remove',
                            'condition': condition_type},
-                       color="red", size="xs", variant="filled"
+                       color="red", size="xs", variant="light"
                        )
             )
     blocks.append(
-        html.Div(buttons, style={'display': 'flex','justifyContent': 'space-between','alignItems': 'center','marginBottom': '15px', 'gap': '8px'})
+        html.Div(buttons, style={'display': 'flex', 'justifyContent': 'space-between','alignItems': 'center','marginBottom': '15px', 'gap': '8px'})
     )
 
     return blocks
