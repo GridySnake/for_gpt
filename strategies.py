@@ -2,14 +2,17 @@ from dash import Dash, dcc, html, Input, Output, State, ALL, MATCH, ctx, no_upda
 # import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import pandas as pd
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from calculate import Coin, Indicator
 from secure_middleware_for_dash import AuthMiddleware
 from dash.exceptions import PreventUpdate
-from .strategies_blocks import strategies_footer, strategies_header, \
+from pages_apps.strategies_blocks import strategies_footer, strategies_header, \
     strategies_choose_strategies_field, indicators_dict, strategies_input_parameters_for_indicators, \
     strategies_strategies_and_conditions_buy_sell, strategies_graphs
-from .strategies_generate_blocks_functions import generate_conditions_block_group, _select_with_tooltip, OHLCV_COLUMNS, tooltip_styles, build_options_template, COMPARISON_OPERATORS
-from .strategies_helpful_functions import group_params, _max_ui_index_for, remove_, dict_ops, delete_instance_keys, delete_indicator_keys, filter_to_selected_indicators, as_selected_set, _fmt_pct, _color_scale_number, extract_indicator_params, replace_ids_with_names
+from pages_apps.strategies_generate_blocks_functions import generate_conditions_block_group, _select_with_tooltip, OHLCV_COLUMNS, tooltip_styles, build_options_template, COMPARISON_OPERATORS
+from pages_apps.strategies_helpful_functions import group_params, _max_ui_index_for, remove_, dict_ops, delete_instance_keys, delete_indicator_keys, filter_to_selected_indicators, as_selected_set, _fmt_pct, _color_scale_number, extract_indicator_params, replace_ids_with_names
 import json
 import itertools
 import plotly.colors as pc
@@ -29,8 +32,8 @@ style_data={
     "height": "auto"
 }
 
-df_input_parameters = pd.read_csv('need_files/indicators_input_parameters.csv')
-df_output_parameters = pd.read_csv('need_files/indicators_output_parameters.csv')
+df_input_parameters = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'need_files', 'indicators_input_parameters.csv'))
+df_output_parameters = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'need_files', 'indicators_output_parameters.csv'))
 
 strategies_app = Dash(__name__, requests_pathname_prefix='/strategies/',
                       meta_tags=[{'name': 'viewport', 'content': 'width=device-width, initial-scale=1'}],
@@ -50,15 +53,40 @@ strategies_app.layout = dmc.MantineProvider(
     strategies_header,
 
     # Основной контент
-    dmc.Grid(
-    children=[
-        strategies_choose_strategies_field,  # span=4
-        strategies_input_parameters_for_indicators,  # span=3  (сделай GridCol)
-        strategies_strategies_and_conditions_buy_sell  # span=5  (сделай GridCol)
-    ],
-    gutter="md"  # промежуток между колонками (по желанию)
-)
-,
+    html.Div([
+        dmc.Grid(
+        children=[
+            dmc.GridCol(
+                strategies_choose_strategies_field,
+                span=3,
+                id="column_1",
+                style={"padding": "0 8px 0 0"}
+            ),
+            dmc.GridCol(
+                strategies_input_parameters_for_indicators,
+                span=3,
+                id="column_2",
+                style={"display": "none", "padding": "0 8px", "borderLeft": "1px solid #e1e5e9"}
+            ),
+            dmc.GridCol(
+                strategies_strategies_and_conditions_buy_sell,
+                span=6,
+                id="column_3", 
+                style={"display": "none", "padding": "0 0 0 8px", "borderLeft": "1px solid #e1e5e9"}
+            )
+        ],
+        gutter="md",  # увеличиваем промежуток между колонками
+        style={
+            "maxWidth": "1400px", 
+            "margin": "0 auto", 
+            "padding": "20px"
+        }
+        ),
+        
+        # Загружаем графики и прочие данные
+        strategies_graphs
+    ], style={"flex": "1", "minHeight": "0"}),
+
     # Сторы
     dcc.Store(
         id='stored_inputs',
@@ -91,10 +119,21 @@ strategies_app.layout = dmc.MantineProvider(
         data={},
         storage_type='memory'
     ),
-    # Загружаем графики и прочие данные
-    strategies_graphs,
+    dcc.Store(
+        id="indicator_inputs_ready",
+        data=False
+    ),
+
+    # Footer в конце страницы
     strategies_footer
-], style={'height': '100%', 'margin': '0', 'font-family': ['Arial', 'sans-serif'], 'background-color': '#f4f7fa'}
+], style={
+    'min-height': '100vh', 
+    'margin': '0', 
+    'font-family': ['Arial', 'sans-serif'], 
+    'background-color': '#f4f7fa',
+    'display': 'flex',
+    'flex-direction': 'column'
+}
  )
 )
 
@@ -185,6 +224,35 @@ strategies_app.clientside_callback(
         State({'type': MATCH, 'strategy': MATCH, 'condition': MATCH, 'index': MATCH, 'role': 'input'}, 'id'),
         State({'type': MATCH, 'strategy': MATCH, 'condition': MATCH, 'index': MATCH, 'role': 'input'}, 'children'),
     ]
+)
+
+
+strategies_app.clientside_callback(
+    """
+    function(ready, children){
+        // Show only if ready AND has children
+        const hasChildren = children && children.length > 0;
+        return {display: (ready && hasChildren) ? "block" : "none"};
+    }
+        """,
+    Output("column_2", "style"),
+    [Input("indicator_inputs_ready", "data"),
+     Input("input_parameters_for_indicators", "children")],
+)
+
+# Client-side callback to show columns 2 and 3 when indicators are selected
+strategies_app.clientside_callback(
+    """
+    function(selected_indicators) {
+        // Show columns if any indicators are selected
+        const shouldShow = selected_indicators && selected_indicators.length > 0;
+        return [
+            {"display": shouldShow ? "block" : "none"}   // column_3 style
+        ];
+    }
+    """,
+    [Output("column_3", "style")],
+    [Input("dropdown_indicators", "value")]
 )
 
 
@@ -654,6 +722,22 @@ def toggle_custom_input(value):
 
 
 @strategies_app.callback(
+    [Output('dropdown_coin', 'value'),
+     Output('dropdown_interval', 'value'),
+     Output('dropdown_indicators', 'value'),
+     Output('date_picker', 'start_date'),
+     Output('date_picker', 'end_date')],
+    Input('clear_all_strategy', 'n_clicks'),
+    prevent_initial_call=True
+)
+def clear_strategy_inputs(n_clicks):
+    print(n_clicks)
+    if n_clicks and n_clicks > 0:
+        return None, None, [], None, None
+    raise PreventUpdate
+
+
+@strategies_app.callback(
     Output('param_instances', 'data'),
     Output('stored_inputs', 'data'),
     # события
@@ -756,7 +840,8 @@ def sync_all(selected_indicators,
 
 @strategies_app.callback(
     Output('input_parameters_for_indicators', 'children'),
-    Output('card_indicators_input', 'style'),
+    Output("indicator_inputs_ready", "data"),
+    #Output('card_indicators_input', 'style'),
     Input('param_instances', 'data'),
     State('stored_inputs', 'data'),
     prevent_initial_call=False  # важно, чтобы карточка могла появиться сразу
@@ -779,7 +864,6 @@ def generate_indicator_inputs(param_instances, stored_data):
             continue
 
         card_body = [html.H5(f'{indicator} Parameters', className='card-title text-center')]
-
         # Инстансы (1..count)
         for instance_num in range(1, count + 1):
             card_body.append(html.H6(f"Instance {instance_num}", className='mt-3'))
@@ -860,9 +944,9 @@ def generate_indicator_inputs(param_instances, stored_data):
         )
 
         if not has_any_input:
-            return [], {'display': 'none'}
+            return [], False
 
-    return all_cards, {'display': 'block'}
+    return all_cards, True
 
 
 @strategies_app.callback(
