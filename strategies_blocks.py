@@ -6,9 +6,10 @@ from datetime import date
 import pandas as pd
 import json
 
-df_coins = pd.read_csv('need_files/Symbols_mini.csv')
+import os
+df_coins = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'need_files', 'Symbols_mini.csv'))
 
-with open('need_files/indicator_list.txt', 'r') as f:
+with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'need_files', 'indicator_list.txt'), 'r') as f:
     indicators_dict = json.loads(f.read())
 
     strategies_header = html.Header([
@@ -30,76 +31,110 @@ with open('need_files/indicator_list.txt', 'r') as f:
     card_style = {
         'boxShadow': '0 4px 8px rgba(0,0,0,0.1)',
         'borderRadius': '8px',
-        'padding': '24px',
+        'padding': '0',
         'background': '#ffffff',
-        'width': 'fit-content',
-        'maxWidth': '400px',
-        'margin': '0 0 0 0',
-        'display': 'inline-block',
-        'verticalAlign': 'top'
+        'width': '90%',
+        'margin': '0 auto',
+        'border': '1px solid #e1e5e9',
+        'minHeight': '800px'
     }
 
     input_style = {
-        'marginBottom': '2px',
+        'marginBottom': '4px',
         'borderRadius': '4px',
         'border': '1px solid #e0e0e0',
-        'padding': '12px',
-        'boxSizing': 'border-box'
+        'padding': '4px 8px',
+        'boxSizing': 'border-box',
+        'width': '100%',
+        'height': '28px',
+        'lineHeight': '20px'
     }
 
-    strategies_choose_strategies_field = dmc.GridCol(
-        dmc.Card(
-            children=[
-                dmc.CardSection(
-                    dmc.Text("Choose strategy", ta="center", fw=700, size="lg"),
-                    withBorder=True, inheritPadding=True
-                ),
-                dmc.CardSection(
-                    dmc.Stack([
-                        dcc.Dropdown(
-                            df_coins['Symbol'].unique(),
-                            'ETH-USD',
-                            id='dropdown_coin',
-                            style=input_style
-                        ),
-                        dcc.DatePickerRange(
-                            id='date_picker',
-                            min_date_allowed=date(2009, 1, 1),
-                            max_date_allowed=date.today(),
-                            start_date=date(2022, 1, 1),
-                            end_date=date.today(),
-                            style=input_style
-                        ),
-                        dcc.Dropdown(
-                            id='dropdown_interval',
-                            options=[{'label': i, 'value': i} for i in
-                                     '1,3,5,15,30,60,120,240,360,720,D,W,M'.split(',')],
-                            value='1d',
-                            style=input_style
-                        ),
-                        dcc.Dropdown(
-                            id='dropdown_indicators',
-                            options=[{'label': indicator, 'value': indicator} for indicator in indicators_dict.keys()],
-                            value=[],
-                            multi=True,
-                            style=input_style
-                        ),
-                        dmc.Button(
-                            'Submit',
-                            id='submit_button',
-                            n_clicks=0,
-                            variant="filled",
-                            color="blue"
-                        )
-                    ])
-                )
-            ],
-            shadow="sm",
-            radius="md",
-            withBorder=True,
-            style=card_style
-        ),
-        span=4  # <-- именно на GridCol, не на Grid
+    strategies_choose_strategies_field = dmc.Card(
+        children=[
+            dmc.CardSection(
+                dmc.Group([
+                    dmc.Text("Strategy parameters", fw=700, size="lg"),
+                    dmc.Button(
+                        "Clear ALL",
+                        id="clear_all_strategy",
+                        n_clicks=0,
+                        color="gray",
+                        variant="light",
+                        size="xs"
+                    )
+                ], justify="space-between"),
+                withBorder=True, inheritPadding=True,
+                style={
+                    "paddingTop": "20px",
+                    "paddingBottom": "16px",
+                    "lineHeight": "1.5"
+                }
+            ),
+            dmc.CardSection(
+                dmc.Stack([
+                    dcc.Dropdown(
+                        df_coins['Symbol'].unique(),
+                        'ETH-USD',
+                        id='dropdown_coin',
+                        searchable=True,
+                        style={
+                            **input_style,
+                            "height": "28px",
+                            "padding": "0 6px"
+                        }
+                    ),
+                    dcc.DatePickerRange(
+                        id='date_picker',
+                        min_date_allowed=date(2009, 1, 1),
+                        max_date_allowed=date.today(),
+                        start_date=date(2022, 1, 1),
+                        end_date=date.today(),
+                        style={
+                            **input_style,
+                            "height": "28px",
+                            "padding": "0 6px"
+                        }
+                    ),
+                    dcc.Dropdown(
+                        id='dropdown_interval',
+                        options=[{'label': i, 'value': i} for i in
+                                 '1,3,5,15,30,60,120,240,360,720,D,W,M'.split(',')],
+                        value='1d',
+                        style={
+                            **input_style,
+                            "height": "32px",
+                            "padding": "0 6px"
+                        }
+                    ),
+                    dcc.Dropdown(
+                        id='dropdown_indicators',
+                        options=[{'label': indicator, 'value': indicator} for indicator in indicators_dict.keys()],
+                        value=[],
+                        multi=True,
+                        searchable=True,
+                        style={
+                            **input_style,
+                            "height": "32px",
+                            "padding": "0 6px"
+                        }
+                    ),
+                    dmc.Button(
+                        'Submit',
+                        id='submit_button',
+                        n_clicks=0,
+                        variant="filled",
+                        color="blue",
+                        size="md",
+                        style={"height": "20px", "marginTop": "10px"}
+                    )
+                ])
+            )
+        ],
+        radius="md",
+        style={**card_style, "minHeight": "1000px", "align":"center",
+	"justify":"space-between",
+	"gap":"xs",}
     )
 
     # === BLOCK 2: Graphs ===
@@ -122,36 +157,40 @@ with open('need_files/indicator_list.txt', 'r') as f:
 
     # === BLOCK 3: Input parameters ===
     # === BLOCK 3: Input parameters for indicators ===
-    strategies_input_parameters_for_indicators = dmc.GridCol(
-        dmc.Card(
-            id='card_indicators_input',
-            children=[
-                dmc.CardSection(
+    strategies_input_parameters_for_indicators = dmc.Card(
+        id='card_indicators_input',
+        children=[
+            dmc.CardSection(
+                dmc.Group([
+                    dmc.Text("Indicator Parameters", fw=700, size="lg"),
                     dmc.Button(
                         "Clear ALL",
                         id="clear_all_global",
                         n_clicks=0,
                         color="gray",
                         variant="light",
-                        size="xs",
-                        style={"marginBottom": "10px"}
-                    ),
-                    withBorder=True, inheritPadding=True
-                ),
-                dmc.CardSection(
-                    html.Div([], id='input_parameters_for_indicators')
-                )
-            ],
-            style={'display': 'none'}
-        ),
-        span=3
+                        size="xs"
+                    )
+                ], justify="space-between"),
+                withBorder=True, inheritPadding=True,
+                style={
+                    "paddingTop": "20px",
+                    "paddingBottom": "16px",
+                    "lineHeight": "1.5"
+                }
+            ),
+            dmc.CardSection(
+                html.Div([], id='input_parameters_for_indicators')
+            )
+        ], style={}
     )
 
     # === BLOCK 4: Strategies and conditions ===
-    strategies_strategies_and_conditions_buy_sell = dmc.GridCol(
-        dmc.Card(
-            children=[
-                dmc.CardSection(
+    strategies_strategies_and_conditions_buy_sell = dmc.Card(
+        children=[
+            dmc.CardSection(
+                dmc.Group([
+                    dmc.Text("Strategy Conditions", fw=700, size="lg"),
                     html.Div(
                         id='clear_all_container',
                         children=dmc.Button(
@@ -160,77 +199,63 @@ with open('need_files/indicator_list.txt', 'r') as f:
                             n_clicks=0,
                             color="gray",
                             variant="light",
-                            size="xs",
-                            style={"marginBottom": "10px"}
+                            size="xs"
                         ),
                         style={'display': 'none'}
-                    ),
-                    withBorder=True, inheritPadding=True
+                    )
+                ], justify="space-between"),
+                withBorder=True, inheritPadding=True,
+                style={
+                    "paddingTop": "20px",
+                    "paddingBottom": "16px",
+                    "lineHeight": "1.5"
+                }
+            ),
+            dmc.CardSection(
+                html.Div(id='strategies_container', children=[])
+            ),
+            dmc.CardSection(
+                dmc.Group(
+                    [
+                        dmc.Button(
+                            'Add strategy',
+                            id='add_strategy',
+                            n_clicks=0,
+                            color="green",
+                            variant="filled",
+                            size="md",
+                            style={'marginBottom': '10px', 'display': 'none', 'height': '40px'}
+                        ),
+                        dmc.Button(
+                            'Remove strategy',
+                            id='remove_strategy',
+                            n_clicks=0,
+                            color="red",
+                            variant="filled",
+                            size="md",
+                            style={'marginBottom': '10px', 'display': 'none', 'height': '40px'}
+                        )
+                    ],
+                    justify="space-between",  # кнопки разнесены по краям
+                    gap="md",
+                    style={"marginBottom": "20px"}
                 ),
-                dmc.CardSection(
-                    html.Div(id='strategies_container', children=[])
-                ),
-                dmc.CardSection(
-                    dmc.Group(
-                        [
-                            dmc.Button(
-                                'Add strategy',
-                                id='add_strategy',
-                                n_clicks=0,
-                                color="green",
-                                variant="filled",
-                                size="sm",
-                                style={'marginBottom': '10px', 'display': 'none'}
-                            ),
-                            dmc.Button(
-                                'Remove strategy',
-                                id='remove_strategy',
-                                n_clicks=0,
-                                color="red",
-                                variant="filled",
-                                size="sm",
-                                style={'marginBottom': '10px', 'display': 'none'}
-                            )
-                        ],
-                        justify="space-between",  # кнопки разнесены по краям
-                        gap="md",
-                        style={"marginBottom": "20px"}
-                    ),
-                    inheritPadding=True
-                )
-            ],
-            shadow="sm",
-            radius="md",
-            withBorder=True
-        ),
-        span=5,
+                inheritPadding=True
+            )
+        ],
+        shadow="sm",
+        radius="md",
+        withBorder=True,
         id='parameters_conditions_block'
     )
 
-    strategies_footer = dcc.Markdown("""
-        <style>
-            body, html {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .container {
-                flex: 1; /* Занимает всё доступное пространство */
-                padding: 30px 0;
-            }
-
-            p {
-                background-color: #333; 
-                color: #fff;
-                padding: 20px 0;
-                text-align: center;
-                margin: 0; /* Убираем стандартные отступы */
-            }
-        </style>
-        <div class="container">
-        </div>
-        <p>&copy; 2025 Crypto Strategy App | All Rights Reserved</p>
-        """, dangerously_allow_html=True)
+    strategies_footer = html.Footer([
+        html.P("© 2025 Crypto Strategy App | All Rights Reserved")
+    ], style={
+        "background-color": "#333",
+        "color": "#fff",
+        "padding": "20px 0",
+        "text-align": "center",
+        "margin-top": "30px",
+        "flex-shrink": "0"
+    })
