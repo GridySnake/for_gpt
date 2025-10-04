@@ -237,15 +237,15 @@ footer {
 }
 
 /* Increase height for first column specifically */
-.mantine-GridCol-root:first-child .mantine-Card-root {
-    min-height: 1000px !important;
-}
+/*.mantine-GridCol-root:first-child .mantine-Card-root {*/
+/*    min-height: 1000px !important;*/
+/*}*/
 
 /* Ensure wrapper containers adjust to content */
-.mantine-CardSection-root {
-    flex: 1 !important;
-    min-height: auto !important;
-}
+/*.mantine-CardSection-root {*/
+/*    flex: 1 !important;*/
+/*    min-height: auto !important;*/
+/*}*/
 
 /* Make Stack components narrower than their card containers */
 .mantine-Stack-root {
@@ -264,206 +264,188 @@ footer {
 }
 
 /* Specific styling for first column Stack */
-.mantine-GridCol-root:first-child .mantine-Stack-root {
-    min-height: 600px !important;
-    gap: 16px !important;
-    padding: 50px 0 !important;
-}
+/*.mantine-GridCol-root:first-child .mantine-Stack-root {*/
+/*    min-height: 600px !important;*/
+/*    gap: 16px !important;*/
+/*    padding: 50px 0 !important;*/
+/*}*/
 
-/* Reduce height of dropdowns in first column */
-.mantine-GridCol-root:first-child .Select-control {
-    height: 28px !important;
-    min-height: 28px !important;
-    padding: 0 8px !important;
-    line-height: 26px !important;
-}
 
-.mantine-GridCol-root:first-child .Select-control .Select-value {
-    line-height: 26px !important;
-    padding: 0 !important;
-}
-
-.mantine-GridCol-root:first-child .DateInput_input {
-    height: 28px !important;
-    min-height: 28px !important;
-    padding: 4px 8px !important;
-    line-height: 20px !important;
-}
 
 /* Additional date picker styling for first column */
-.mantine-GridCol-root:first-child .DateRangePickerInput {
-    height: 28px !important;
-    min-height: 28px !important;
-}
+/*.mantine-GridCol-root:first-child .DateRangePickerInput {*/
+/*    height: 28px !important;*/
+/*    min-height: 28px !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .DateRangePickerInput__display-text {
-    line-height: 20px !important;
-    padding: 4px 8px !important;
-    height: 28px !important;
-}
+/*.mantine-GridCol-root:first-child .DateRangePickerInput__display-text {*/
+/*    line-height: 20px !important;*/
+/*    padding: 4px 8px !important;*/
+/*    height: 28px !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .DateRangePickerInput__display-text--has-input {
-    line-height: 20px !important;
-    padding: 4px 8px !important;
-}
+/*.mantine-GridCol-root:first-child .DateRangePickerInput__display-text--has-input {*/
+/*    line-height: 20px !important;*/
+/*    padding: 4px 8px !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .DateRangePickerInput__display-text--focused {
-    line-height: 20px !important;
-    padding: 4px 8px !important;
-}
+/*.mantine-GridCol-root:first-child .DateRangePickerInput__display-text--focused {*/
+/*    line-height: 20px !important;*/
+/*    padding: 4px 8px !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .mantine-Button-root {
-    height: 28px !important;
-    min-height: 28px !important;
-    padding: 4px 12px !important;
-}
+/*.mantine-GridCol-root:first-child .mantine-Button-root {*/
+/*    height: 28px !important;*/
+/*    min-height: 28px !important;*/
+/*    padding: 4px 12px !important;*/
+/*}*/
 
 /* Adjust dropdown arrow and placeholder for reduced height */
-.mantine-GridCol-root:first-child .Select-control .Select-arrow-zone {
-    height: 26px !important;
-    line-height: 26px !important;
-}
+/*.mantine-GridCol-root:first-child .Select-control .Select-arrow-zone {*/
+/*    height: 26px !important;*/
+/*    line-height: 26px !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .Select-control .Select-placeholder {
-    line-height: 26px !important;
-    padding: 0 !important;
-}
+/*.mantine-GridCol-root:first-child .Select-control .Select-placeholder {*/
+/*    line-height: 26px !important;*/
+/*    padding: 0 !important;*/
+/*}*/
 
-/* Ensure dropdown options are properly sized */
-.mantine-GridCol-root:first-child .Select-menu-outer {
-    max-height: 180px !important;
-}
+/*!* Ensure dropdown options are properly sized *!*/
+/*.mantine-GridCol-root:first-child .Select-menu-outer {*/
+/*    max-height: 180px !important;*/
+/*}*/
 
 /* Additional compact styling for form elements */
-.mantine-GridCol-root:first-child .Select-input {
-    height: 24px !important;
-    line-height: 24px !important;
-}
+/*.mantine-GridCol-root:first-child .Select-input {*/
+/*    height: 24px !important;*/
+/*    line-height: 24px !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .Select-input input {
-    height: 24px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
+/*.mantine-GridCol-root:first-child .Select-input input {*/
+/*    height: 24px !important;*/
+/*    padding: 0 !important;*/
+/*    margin: 0 !important;*/
+/*}*/
 
 /* Improved Padding */
-.mantine-CardSection-root {
-    padding: 16px !important;
-}
+/*.mantine-CardSection-root {*/
+/*    padding: 16px !important;*/
+/*}*/
 
-.mantine-Stack-root {
-    gap: 12px !important;
-}
+/*.mantine-Stack-root {*/
+/*    gap: 12px !important;*/
+/*}*/
 
-/* Better Visual Hierarchy */
-.mantine-Text-root {
-    line-height: 1.4 !important;
-}
+/*!* Better Visual Hierarchy *!*/
+/*.mantine-Text-root {*/
+/*    line-height: 1.4 !important;*/
+/*}*/
 
 /* Responsive Button Groups */
-@media (max-width: 768px) {
-    .mantine-Group-root {
-        flex-direction: column !important;
-        align-items: stretch !important;
-    }
-    
-    .mantine-Group-root .mantine-Button-root {
-        margin-bottom: 8px !important;
-    }
-}
+/*@media (max-width: 768px) {*/
+/*    .mantine-Group-root {*/
+/*        flex-direction: column !important;*/
+/*        align-items: stretch !important;*/
+/*    }*/
+/*    */
+/*    .mantine-Group-root .mantine-Button-root {*/
+/*        margin-bottom: 8px !important;*/
+/*    }*/
+/*}*/
 
 /* Enhanced Focus States */
-.mantine-Button-root:focus {
-    outline: 2px solid #007bff !important;
-    outline-offset: 2px !important;
-}
+/*.mantine-Button-root:focus {*/
+/*    outline: 2px solid #007bff !important;*/
+/*    outline-offset: 2px !important;*/
+/*}*/
 
-/* Smooth Transitions */
-.mantine-GridCol-root {
-    transition: all 0.3s ease-in-out !important;
-}
+/*!* Smooth Transitions *!*/
+/*.mantine-GridCol-root {*/
+/*    transition: all 0.3s ease-in-out !important;*/
+/*}*/
 
 /* Container Improvements */
-.mantine-Grid-root {
-    padding: 20px !important;
-    max-width: 1400px !important;
-    margin: 0 auto !important;
-}
+/*.mantine-Grid-root {*/
+/*    padding: 20px !important;*/
+/*    max-width: 1400px !important;*/
+/*    margin: 0 auto !important;*/
+/*}*/
 
 /* Reduce side margins for edge columns */
-.mantine-GridCol-root:first-child {
-    padding-left: 0 !important;
-    margin-left: 0 !important;
-}
+/*.mantine-GridCol-root:first-child {*/
+/*    padding-left: 0 !important;*/
+/*    margin-left: 0 !important;*/
+/*}*/
 
-.mantine-GridCol-root:last-child {
-    padding-right: 0 !important;
-    margin-right: 0 !important;
-}
+/*.mantine-GridCol-root:last-child {*/
+/*    padding-right: 0 !important;*/
+/*    margin-right: 0 !important;*/
+/*}*/
 
-/* Align strategy selector vertically */
-.mantine-GridCol-root:first-child .mantine-Card-root {
-    margin-top: 0 !important;
-}
+/*!* Align strategy selector vertically *!*/
+/*.mantine-GridCol-root:first-child .mantine-Card-root {*/
+/*    margin-top: 0 !important;*/
+/*}*/
 
 /* Fix Choose Strategy header spacing */
-.mantine-GridCol-root:first-child .mantine-CardSection-root:first-child {
-    padding-top: 20px !important;
-    padding-bottom: 16px !important;
-    line-height: 1.5 !important;
-}
+/*.mantine-GridCol-root:first-child .mantine-CardSection-root:first-child {*/
+/*    padding-top: 20px !important;*/
+/*    padding-bottom: 16px !important;*/
+/*    line-height: 1.5 !important;*/
+/*}*/
 
-.mantine-GridCol-root:first-child .mantine-Text-root {
-    line-height: 1.4 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-    overflow: visible !important;
-}
+/*.mantine-GridCol-root:first-child .mantine-Text-root {*/
+/*    line-height: 1.4 !important;*/
+/*    margin: 0 !important;*/
+/*    padding: 0 !important;*/
+/*    display: block !important;*/
+/*    overflow: visible !important;*/
+/*}*/
 
 /* Ensure proper spacing for the header group */
-.mantine-GridCol-root:first-child .mantine-Group-root {
-    align-items: center !important;
-    min-height: 40px !important;
-}
+/*.mantine-GridCol-root:first-child .mantine-Group-root {*/
+/*    align-items: center !important;*/
+/*    min-height: 40px !important;*/
+/*}*/
 
-/* Ensure proper spacing for the second column header group */
-.mantine-GridCol-root:nth-child(2) .mantine-Group-root {
-    align-items: center !important;
-    min-height: 40px !important;
-}
+/*!* Ensure proper spacing for the second column header group *!*/
+/*.mantine-GridCol-root:nth-child(2) .mantine-Group-root {*/
+/*    align-items: center !important;*/
+/*    min-height: 40px !important;*/
+/*}*/
 
-/* Ensure all columns start at the same vertical level */
-.mantine-GridCol-root {
-    align-items: flex-start !important;
-}
+/*!* Ensure all columns start at the same vertical level *!*/
+/*.mantine-GridCol-root {*/
+/*    align-items: flex-start !important;*/
+/*}*/
 
-.mantine-GridCol-root .mantine-Card-root {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
+/*.mantine-GridCol-root .mantine-Card-root {*/
+/*    margin-top: 0 !important;*/
+/*    margin-bottom: 0 !important;*/
+/*}*/
 
-@media (max-width: 1400px) {
-    .mantine-Grid-root {
-        padding: 15px !important;
-        max-width: 100% !important;
-    }
-    
-    .mantine-Card-root {
-        width: 95% !important;
-    }
-}
+/*@media (max-width: 1400px) {*/
+/*    .mantine-Grid-root {*/
+/*        padding: 15px !important;*/
+/*        max-width: 100% !important;*/
+/*    }*/
+/*    */
+/*    .mantine-Card-root {*/
+/*        width: 95% !important;*/
+/*    }*/
+/*}*/
 
-@media (max-width: 768px) {
-    .mantine-Grid-root {
-        padding: 10px !important;
-        max-width: 100% !important;
-    }
-    
-    .mantine-Card-root {
-        width: 100% !important;
-    }
-}
+/*@media (max-width: 768px) {*/
+/*    .mantine-Grid-root {*/
+/*        padding: 10px !important;*/
+/*        max-width: 100% !important;*/
+/*    }*/
+/*    */
+/*    .mantine-Card-root {*/
+/*        width: 100% !important;*/
+/*    }*/
+/*}*/
 
 /* контейнер карточек в колонке стратегий */
 .s-cards { width: 100%; }
@@ -489,3 +471,234 @@ footer {
 /* на всякий случай уберём любые прежние ограничения ширины старого класса */
 .strategy-card { max-width: none; width: 100%; }  /* если в старом css задавалась узкая ширина */
 
+/* Увеличим высоту для всех дропдаунов */
+.Select-control,
+.DateRangePickerInput {
+    min-height: 40px;       /* ← общая высота */
+    height: 40px;
+    font-size: 16px;        /* чуть крупнее текст */
+}
+
+/* Подгоняем сам текстовый инпут внутри дропдауна */
+.Select--single > .Select-control .Select-value,
+.Select-placeholder {
+    line-height: 38px;      /* почти равен min-height */
+}
+
+/* Увеличиваем высоту и добавляем отступы между элементами в column_1 */
+#column_1 .Select-control {
+    height: 40px !important;
+    min-height: 40px !important;
+    line-height: 38px !important;
+    padding: 4px 8px !important;
+    margin-bottom: 8px !important;   /* ← небольшой нижний отступ */
+}
+
+/* === Новый стиль для column_1 === */
+
+/* Все контролы (Dropdown/DatePicker) – одинаковая высота */
+#column_1 .Select-control,
+#column_1 .DateRangePickerInput {
+    height: 42px !important;
+    min-height: 42px !important;
+    line-height: 40px !important;
+    padding: 4px 10px !important;
+    border-radius: 6px;         /* слегка скруглим */
+    font-size: 15px;            /* чуть крупнее шрифт */
+}
+
+/* Текст внутри dropdown/placeholder */
+#column_1 .Select-value,
+#column_1 .Select-placeholder,
+#column_1 .DateRangePickerInput__display-text {
+    line-height: 40px !important;
+    font-size: 15px !important;
+}
+
+/* Отступы между элементами стека */
+#column_1 .mantine-Stack-root > * {
+    margin-bottom: 20px !important;
+}
+
+/* Увеличиваем внутренние отступы и рамку CardSection в column_1 */
+#column_1 .mantine-Card-section {
+    padding: 16px !important;        /* внутренние отступы по всем сторонам */
+    border-width: 2px !important;    /* толще рамка */
+    border-color: #d0d4da !important; /* слегка более заметный цвет */
+    border-radius: 8px !important;   /* немного скруглить углы */
+}
+
+
+/*#column_1 .mantine-Card-root {*/
+/*    padding: 0 !important;           !* убираем внутренний «резерв» Mantine *!*/
+/*    border-width: 2px !important;*/
+/*    border-color: #d0d4da !important;*/
+/*    border-radius: 10px !important;*/
+/*}*/
+
+/*#column_2 .mantine-Card-root {*/
+/*    border-width: 2px !important;*/
+/*    border-color: #d0d4da !important;*/
+/*    border-radius: 10px !important;*/
+/*}*/
+
+#column_1 .Select-clear-zone,
+#column_1 .Select-arrow-zone {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    line-height: 40px !important;
+}
+
+/* Саму иконку центрируем */
+#column_1 .Select-clear,
+#column_1 .Select-arrow {
+    font-size: 18px !important;     /* можно чуть увеличить сам символ */
+}
+
+/*#column_1 .Select-clear-zone,*/
+/*#column_1 .Select-arrow-zone {*/
+/*    padding: 6px !important;*/
+/*}*/
+
+/* === DatePicker в column_1 === */
+
+/* Контейнер делаем flex на 100% ширины родителя */
+/* === DatePickerRange под размеры Dropdown === */
+#column_1 .DateRangePickerInput {
+    display: flex !important;
+    align-items: center !important;
+    align-self: flex-start !important; /* выравниваем как у других контролов */
+    width: 85% !important;
+    max-width: 100% !important;
+    height: 42px !important;           /* увеличиваем высоту */
+    min-height: 42px !important;
+    border: 1px solid #e1e5e9 !important;
+    border-radius: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;              /* убираем авто-центрирование */
+    box-sizing: border-box !important;
+}
+
+#column_1 .DateRangePickerInput > .DateInput {
+    flex: 1 1 50% !important;         /* обе половинки делят ширину */
+    min-width: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+}
+
+#column_1 .DateRangePickerInput_arrow {
+    flex: 0 0 auto !important;
+    padding: 0 6px !important;        /* небольшой зазор */
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+
+#column_1 .DateInput_input {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 8px !important;        /* как у dropdown */
+    font-size: 15px !important;
+    line-height: 40px !important;     /* синхронизируем с высотой */
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-align: center !important;
+}
+
+/* =========================================================
+   === Interactive Elements Styling
+   ========================================================= */
+
+/* Cursor pointers for all interactive elements */
+.mantine-Button-root,
+.Select-control,
+.DateRangePickerInput,
+.mantine-TextInput-input,
+.mantine-TextInput-root,
+.mantine-Select-input,
+.mantine-Select-root,
+.mantine-Popover-target,
+.mantine-Tooltip-target,
+a,
+button,
+[role="button"],
+[tabindex] {
+    cursor: pointer !important;
+}
+
+/* Hover effects for buttons */
+.mantine-Button-root:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+/* Hover effects for cards */
+.mantine-Card-root:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-2px) !important;
+    transition: all 0.3s ease-in-out !important;
+}
+
+/* Hover effects for dropdowns */
+.Select-control:hover,
+.DateRangePickerInput:hover {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+/* Focus states for inputs and dropdowns */
+.Select-control:focus,
+.DateRangePickerInput:focus,
+.mantine-TextInput-input:focus,
+.mantine-Select-input:focus {
+    outline: 2px solid #0d6efd !important;
+    outline-offset: 2px !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Disabled state styling */
+.mantine-Button-root:disabled,
+.mantine-Button-root[disabled] {
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.Select-control.is-disabled,
+.DateRangePickerInput[disabled] {
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+}
+
+/* Style for condition logic dropdown */
+.condition-logic-dropdown .Select-control {
+    height: 28px !important;
+    min-height: 28px !important;
+    border-radius: 4px !important;
+    border: 1px solid #ced4da !important;
+    background-color: #f8f9fa !important;
+    cursor: pointer !important;
+}
+
+.condition-logic-dropdown .Select-control:hover {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1) !important;
+}
+
+.condition-logic-dropdown .Select-control:focus {
+    outline: 2px solid #0d6efd !important;
+    outline-offset: 2px !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25) !important;
+}
