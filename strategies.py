@@ -4,7 +4,6 @@
 from dash import Dash, dcc, html, Input, Output, State, ALL, MATCH, ctx
 
 import plotly.graph_objects as go
-import pandas as pd
 import sys
 import os
 
@@ -20,31 +19,32 @@ from pages_apps.strategies_blocks import (
     strategies_strategies_and_conditions_buy_sell,
     strategies_graphs,
 )
-from pages_apps.strategies_generate_blocks_functions import (
-    generate_conditions_block_group,
-    tooltip_styles,
-    build_options_template,
-    COMPARISON_OPERATORS,
-)
 from pages_apps.strategies_helpful_functions import (
     group_params,
-    _max_ui_index_for,
-    dict_ops,
     delete_instance_keys,
     delete_indicator_keys,
     as_selected_set,
     _fmt_pct,
     _color_scale_number,
-    extract_indicator_params,
     replace_ids_with_names,
     prune_by_alive_strategies,
     handle_input_groups,
     handle_clear_all,
+    handle_clear_strategy,
     handle_modify_condition,
     handle_option_button_click,
     is_noop_trigger,
     generate_all_strategy_cards,
-    build_strategy_render_context,
+    build_options_template,
+)
+from pages_apps.strategies_constants import (
+    COMPARISON_OPERATORS,
+    tooltip_styles,
+    df_input_parameters,
+    dict_ops,
+    submit_clicks,
+    df_output_parameters,
+    today_str
 )
 import json
 import itertools
@@ -52,33 +52,8 @@ import plotly.colors as pc
 import dash_mantine_components as dmc
 
 # =========================================================
-# === Constants & Config
+# === App & Config
 # =========================================================
-
-d = {"click": 0}
-style_table = (
-    {
-        "overflowX": "auto",
-        "marginBottom": "0px",  # убираем отступ снизу
-    },
-)
-style_cell = ({"textAlign": "center", "padding": "4px"},)
-style_data = {"whiteSpace": "normal", "height": "auto"}
-
-df_input_parameters = pd.read_csv(
-    os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "need_files",
-        "indicators_input_parameters.csv",
-    )
-)
-df_output_parameters = pd.read_csv(
-    os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "need_files",
-        "indicators_output_parameters.csv",
-    )
-)
 
 strategies_app = Dash(
     __name__,
@@ -350,6 +325,41 @@ strategies_app.clientside_callback(
     [Input("dropdown_indicators", "value")],
 )
 
+# Client-side callback to clear parameters of 1 column
+strategies_app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (!n_clicks) { return [dash_clientside.no_update,
+                                 dash_clientside.no_update,
+                                 dash_clientside.no_update,
+                                 dash_clientside.no_update]; }
+        // 0) dropdown_coin
+        var coin = "AAPLXUSDT";
+        // 1) date_picker
+        var startDate = "2022-01-01";
+        var endDate   = "%s";
+        // 2) dropdown_interval
+        var interval = "720";
+        // 3) dropdown_indicators
+        var indicators = [];
+        return [coin,
+                startDate, 
+                endDate,
+                interval,
+                indicators];
+    }
+    """ % today_str,
+    [
+        Output("dropdown_coin", "value"),
+        Output("date_picker",  "start_date"),
+        Output("date_picker",  "end_date"),
+        Output("dropdown_interval", "value"),
+        Output("dropdown_indicators", "value"),
+    ],
+    Input("clear_all_strategy_parameters", "n_clicks"),
+    prevent_initial_call=True,
+)
+
 # =========================================================
 # === Server-side Callbacks
 # =========================================================
@@ -414,8 +424,8 @@ def render_options(
 
     # ⚡️ тут используем кэшируемую функцию
     options = build_options_template(
-        json.dumps(data, sort_keys=True),
-        json.dumps(param_source, sort_keys=True) if param_source else "",
+        raw_options=data,  # ← список опций напрямую
+        param_source=param_source or {}  # ← словарь напрямую
     )
 
     parent_id = {k: str(v) for k, v in {**container_id, "role": "options"}.items()}
@@ -514,6 +524,7 @@ def render_options(
         Input({'type': 'custom_input', 'strategy': ALL, 'condition': ALL, 'index': ALL}, 'value'),
         Input({'type': 'modify_condition', 'strategy': ALL, 'action': ALL, 'condition': ALL}, 'n_clicks'),
         Input({'type': 'clear_all_conditions', 'strategy': ALL}, 'n_clicks'),
+        Input({'type': 'clear_strategy', 'strategy': ALL}, 'n_clicks'),
         Input('remove_strategy', 'n_clicks'),
         Input('strategies_store', 'data'),
     ],
@@ -527,6 +538,7 @@ def save_condition_inputs(
     custom_values,
     modify_clicks,
     clear_all_clicks,
+    clear_strategy_clicks,
     remove_strategy_clicks,
     strategies,
     stored_data,
@@ -546,7 +558,11 @@ def save_condition_inputs(
 
     # --- CLEAR ALL ---
     if isinstance(trig, dict) and trig.get('type') == 'clear_all_conditions':
-        return handle_clear_all(stored_data)
+        return handle_clear_all()
+
+    # --- CLEAR STRATEGY ---
+    if isinstance(trig, dict) and trig.get('type') == 'clear_strategy':
+        return handle_clear_strategy(stored_data, trig)
 
     # --- MODIFY CONDITION (clear/remove по конкретной стороне) ---
     if isinstance(trig, dict) and trig.get('type') == 'modify_condition':
@@ -578,8 +594,14 @@ def render_strategy_cards_cb(strategies, tab_parameters, conditions_inputs, stor
     if not strategies:
         return []
 
-    output_options, param_source = build_strategy_render_context(
-        tab_parameters, stored_inputs_params
+    raw_options = (tab_parameters or {}).get("output_options", [])
+    param_source_raw = stored_inputs_params or {}
+    param_source = param_source_raw if isinstance(param_source_raw, dict) else {}
+    # print("raw_options callback:", raw_options)
+    # print("param_source callback:", param_source)
+    output_options = build_options_template(
+        raw_options=raw_options,
+        param_source=param_source
     )
 
     if not output_options:
@@ -591,6 +613,7 @@ def render_strategy_cards_cb(strategies, tab_parameters, conditions_inputs, stor
         output_options=output_options,
         param_source=param_source,
     )
+
 
 
 @strategies_app.callback(
@@ -977,6 +1000,7 @@ def generate_indicator_inputs(param_instances, stored_data):
                 n_clicks=0,
                 color="green",
                 size="xs",
+                variant="light",
             ),
             dmc.Button(
                 f"Clear {indicator}",
@@ -1057,12 +1081,12 @@ def create_charts(
     conditions_store_inputs,
     strategies,
 ):
-    print("CHART-----------------------")
-    print("conditions_store_inputs", conditions_store_inputs)
-    print("stored_inputs", stored_inputs)
-    if clicks == d["click"]:
+    # print("CHART-----------------------")
+    # print("conditions_store_inputs", conditions_store_inputs)
+    # print("stored_inputs", stored_inputs)
+    if clicks == submit_clicks["click"]:
         return [], [], [], [], {"display": "none"}
-    d["click"] = clicks
+    submit_clicks["click"] = clicks
     conditions_store_inputs = replace_ids_with_names(
         conditions_store_inputs, strategies
     )
