@@ -5,14 +5,10 @@ import dash_mantine_components as dmc
 from datetime import date
 import pandas as pd
 import json
-
+from pages_apps.strategies_constants import today_str, df_coins, indicators_dict
 import os
-df_coins = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'need_files', 'Symbols_mini.csv'))
 
-with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'need_files', 'indicator_list.txt'), 'r') as f:
-    indicators_dict = json.loads(f.read())
-
-    strategies_header = html.Header([
+strategies_header = html.Header([
         html.Div([
             html.Nav([
                 html.A("Crypto Strategy", href="/home", className="navbar-brand"),
@@ -28,7 +24,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
         ], className="container")
     ])
 
-    card_style = {
+card_style = {
         'boxShadow': '0 4px 8px rgba(0,0,0,0.1)',
         'borderRadius': '8px',
         'padding': '0',
@@ -39,25 +35,25 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
         'minHeight': '800px'
     }
 
-    input_style = {
-        'marginBottom': '4px',
-        'borderRadius': '4px',
-        'border': '1px solid #e0e0e0',
-        'padding': '4px 8px',
-        'boxSizing': 'border-box',
-        'width': '100%',
-        'height': '28px',
-        'lineHeight': '20px'
-    }
+    # input_style = {
+    #     'marginBottom': '4px',
+    #     'borderRadius': '4px',
+    #     'border': '1px solid #e0e0e0',
+    #     'padding': '4px 8px',
+    #     'boxSizing': 'border-box',
+    #     'width': '100%',
+    #     'height': '28px',
+    #     'lineHeight': '20px'
+    # }
 
-    strategies_choose_strategies_field = dmc.Card(
+strategies_choose_strategies_field = dmc.Card(
         children=[
             dmc.CardSection(
                 dmc.Group([
                     dmc.Text("Strategy parameters", fw=700, size="lg"),
                     dmc.Button(
                         "Clear ALL",
-                        id="clear_all_strategy",
+                        id="clear_all_strategy_parameters",
                         n_clicks=0,
                         color="gray",
                         variant="light",
@@ -75,11 +71,11 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                 dmc.Stack([
                     dcc.Dropdown(
                         df_coins['Symbol'].unique(),
-                        'ETH-USD',
+                        value='AAPLXUSDT',
                         id='dropdown_coin',
                         searchable=True,
                         style={
-                            **input_style,
+                            # **input_style,
                             "height": "28px",
                             "padding": "0 6px"
                         }
@@ -89,20 +85,20 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                         min_date_allowed=date(2009, 1, 1),
                         max_date_allowed=date.today(),
                         start_date=date(2022, 1, 1),
-                        end_date=date.today(),
+                        end_date=today_str,
                         style={
-                            **input_style,
+                            # **input_style,
                             "height": "28px",
-                            "padding": "0 6px"
+                            # "padding": "0 6px"
                         }
                     ),
                     dcc.Dropdown(
                         id='dropdown_interval',
                         options=[{'label': i, 'value': i} for i in
                                  '1,3,5,15,30,60,120,240,360,720,D,W,M'.split(',')],
-                        value='1d',
+                        value='720',
                         style={
-                            **input_style,
+                            # **input_style,
                             "height": "32px",
                             "padding": "0 6px"
                         }
@@ -114,7 +110,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                         multi=True,
                         searchable=True,
                         style={
-                            **input_style,
+                            # **input_style,
                             "height": "32px",
                             "padding": "0 6px"
                         }
@@ -123,7 +119,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                         'Submit',
                         id='submit_button',
                         n_clicks=0,
-                        variant="filled",
+                        variant="light",
                         color="blue",
                         size="md",
                         style={"height": "20px", "marginTop": "10px"}
@@ -137,8 +133,8 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 	"gap":"xs",}
     )
 
-    # === BLOCK 2: Graphs ===
-    strategies_graphs = dcc.Loading(
+# === BLOCK 2: Graphs ===
+strategies_graphs = dcc.Loading(
         [
             html.H4(id='no_data_message', children=['Sorry. There is no data'], style={'visibility': 'hidden'}),
             html.H4(id='header', children=[]),
@@ -155,14 +151,13 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
         }
     )
 
-    # === BLOCK 3: Input parameters ===
-    # === BLOCK 3: Input parameters for indicators ===
-    strategies_input_parameters_for_indicators = dmc.Card(
+# === BLOCK 3: Input parameters for indicators ===
+strategies_input_parameters_for_indicators = dmc.Card(
         id='card_indicators_input',
         children=[
             dmc.CardSection(
                 dmc.Group([
-                    dmc.Text("Indicator Parameters", fw=700, size="lg"),
+                    dmc.Text("Indicators", fw=700, size="lg"),
                     dmc.Button(
                         "Clear ALL",
                         id="clear_all_global",
@@ -185,8 +180,8 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
         ], style={}
     )
 
-    # === BLOCK 4: Strategies and conditions ===
-    strategies_strategies_and_conditions_buy_sell = dmc.Card(
+# === BLOCK 4: Strategies and conditions ===
+strategies_strategies_and_conditions_buy_sell = dmc.Card(
         children=[
             dmc.CardSection(
                 dmc.Group([
@@ -222,7 +217,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                             id='add_strategy',
                             n_clicks=0,
                             color="green",
-                            variant="filled",
+                            variant="light",
                             size="md",
                             style={'marginBottom': '10px', 'display': 'none', 'height': '40px'}
                         ),
@@ -231,7 +226,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
                             id='remove_strategy',
                             n_clicks=0,
                             color="red",
-                            variant="filled",
+                            variant="light",
                             size="md",
                             style={'marginBottom': '10px', 'display': 'none', 'height': '40px'}
                         )
@@ -249,7 +244,7 @@ with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
         id='parameters_conditions_block'
     )
 
-    strategies_footer = html.Footer([
+strategies_footer = html.Footer([
         html.P("© 2025 Crypto Strategy App | All Rights Reserved")
     ], style={
         "background-color": "#333",
