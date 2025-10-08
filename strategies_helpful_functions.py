@@ -19,6 +19,7 @@ import json
 # from pages_apps.strategies_helpful_functions import _select_with_tooltip
 from pages_apps.strategies_constants import (
     OHLCV_COLUMNS,
+    OHLCV_DESCRIPTIONS,
     COMPARISON_OPERATORS,
     tooltip_styles,
     df_input_parameters,
@@ -271,7 +272,6 @@ def handle_clear_strategy(stored_data: Store, trig: dict) -> Store:
 
     new_store = dict(stored_data or {})
     sid = str(trig.get("strategy"))
-    sid = str(trig.get("strategy"))
     for k in list(new_store.keys()):
         if k.startswith(sid):
             if k.endswith("_0"):
@@ -301,7 +301,6 @@ def handle_modify_condition(stored_data: dict, trig: dict) -> dict:
         for k in list(new_store.keys()):
             if isinstance(k, str) and k.startswith(prefix):
                 if k.endswith("_0"):
-                    print('here')
                     new_store[k] = {}
                     continue
                 new_store.pop(k, None)
@@ -318,6 +317,7 @@ def handle_modify_condition(stored_data: dict, trig: dict) -> dict:
         if last_idx is None:
             # первый раз: создаём 0 и placeholder 1
             new_store[_make_key(sid, cond, 0)] = {}
+            new_store[_make_key(sid, cond, 1)] = {}
         else:
             new_store[_make_key(sid, cond, last_idx + 1)] = {}
         return new_store
@@ -343,6 +343,7 @@ def handle_option_button_click(stored_data: Store, trig: dict) -> Store:
     ftype = trig.get("field_type")
     value = trig.get("value")
     label = trig.get("label")
+    raw = trig.get("raw")
 
     key = _make_key(sid, cond, idx)
     _ensure_bucket(new_store, key)
@@ -351,17 +352,20 @@ def handle_option_button_click(stored_data: Store, trig: dict) -> Store:
     if ftype == "column_dropdown":
         new_store[key]["column"] = value
         new_store[key]["column_label"] = label
+        new_store[key]["column_raw"] = raw or value
     elif ftype == "column_or_custom_dropdown":
         new_store[key]["column_or_custom"] = value
         new_store[key]["column_or_custom_label"] = label
+        new_store[key]["column_or_custom_raw"] = raw or value
     elif ftype == "comparison_operator":
         new_store[key]["comparison_operator"] = value
         new_store[key]["comparison_operator_label"] = label
+        new_store[key]["comparison_operator_raw"] = raw or value
     else:
         # fallback — на случай новых типов
         new_store[key]["value"] = value
         new_store[key]["label"] = label
-
+        new_store[key]["raw"] = raw or value
     return new_store
 
 
@@ -674,7 +678,7 @@ def transform_option(opt: dict, param_source) -> dict:
     m = re.match(r"([A-Za-z0-9]+)__([0-9]+)__(.+)", raw)
     if m:
         name, inst, col = m.groups()
-        pretty = f"{name} {inst} instance {col}"
+        pretty = f"{name} {inst} {col}"
         tooltip = _build_params_tooltip(name, inst, param_source)
         return {
             "label": pretty,
@@ -691,6 +695,7 @@ def transform_option(opt: dict, param_source) -> dict:
         "raw": raw,
         "tooltip": tooltip,
     }
+
 
 def _build_params_tooltip(ind_name: str, inst: str, src: dict | None) -> str | None:
     """
@@ -731,8 +736,9 @@ def _select_with_tooltip(
 ):
     """
     Преобразует data так, чтобы:
-      - label (текст кнопки/опции) = '<NAME> <instance> instance <COLUMN>'
-      - tooltip = 'NAME (param1=val1, ...)' или просто 'NAME'
+      - В списке опций label = '<NAME> <instance> instance <COLUMN>'
+      - На кнопке после выбора показывается '<NAME> <instance> <COLUMN>' (без слова 'instance')
+      - tooltip = 'NAME(param1=val1, ...)' или просто 'NAME'
     OHLCV и Custom оставляем без изменений.
     """
     transformed: list[dict] = []
@@ -744,32 +750,37 @@ def _select_with_tooltip(
         m = re.match(r"([A-Za-z0-9]+)__([0-9]+)__(.+)", raw)
         if m:
             name, inst, col = m.groups()
-            new_label = f"{name} {inst} instance {col}"
+            # label для списка опций (со словом instance)
+            label = f"{name} {inst} {col}"
+            # тултип всегда "ИНДИКАТОР(param=val, ...)"
             tooltip = _build_tooltip(name, inst, param_source)
+
             transformed.append({
-                "label": new_label,   # ← текст кнопки
+                "label": label,   # показываем в списке
                 "value": value,
                 "raw": raw,
-                "tooltip": tooltip,   # ← текст тултипа
+                "tooltip": tooltip,
             })
         else:
-            # OHLCV / Custom — оставляем как есть
+            # OHLCV / Custom — без изменений
             transformed.append({
                 "label": label,
                 "value": value,
                 "raw": raw,
                 "tooltip": opt.get("tooltip"),
             })
-    # Выбранный текст на кнопке
+    # Определяем текст кнопки
     button_text = selected_label or placeholder
     tooltip_for_selected = None
+
     if selected_label:
         for opt in transformed:
-            if opt["label"] == selected_label:
+            if opt["label"] == selected_label:  # сравниваем с label из опций
+                button_text = opt.get("label", selected_label)
                 tooltip_for_selected = opt.get("tooltip")
                 break
 
-    # Кнопка с тултипом только для выбранного
+    # Кнопка
     button_component = dmc.Button(
         button_text,
         id={**component_id, "role": "input"},
@@ -778,6 +789,7 @@ def _select_with_tooltip(
         variant="outline",
         style=style,
     )
+    # Если есть тултип для выбранного — оборачиваем кнопку
     if tooltip_for_selected:
         button_component = dmc.Tooltip(
             label=tooltip_for_selected,
@@ -787,7 +799,7 @@ def _select_with_tooltip(
             styles=tooltip_styles,
         )
 
-    # Popover с поиском и списком опций
+    # Popover с поиском и опциями
     return dmc.Popover(
         id={**component_id, "role": "popover"},
         position="bottom-start",
@@ -818,6 +830,7 @@ def _select_with_tooltip(
             ]),
         ],
     )
+
 
 
 def _parse_idx_from_value(option_value: str, base: str) -> Optional[str]:
@@ -988,7 +1001,7 @@ def _build_options_template_cached(raw_options_json: str, param_source_json: str
         m = re.match(r"([A-Za-z0-9]+)__([0-9]+)__(.+)", raw)
         if m:
             name, inst, col = m.groups()
-            label = f"{name} {inst} instance {col}"
+            label = f"{name} {inst} {col}"
             tooltip = _build_tooltip(name, inst, param_source)
         else:
             # OHLCV / Custom — как есть
@@ -1044,7 +1057,7 @@ def generate_conditions_block_group(
     blocks = []
 
     # стандартные OHLCV
-    ohlcv_data = [{'label': c, 'value': c} for c in OHLCV_COLUMNS]
+    ohlcv_data = [{'label': k, 'value': k, 'tooltip': v} for k, v in OHLCV_DESCRIPTIONS.items()]
 
     # только данные (без кастома)
     data_columns_only = (output_options or []) + ohlcv_data
