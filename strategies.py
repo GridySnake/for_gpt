@@ -39,6 +39,7 @@ from pages_apps.strategies_helpful_functions import (
 )
 from pages_apps.strategies_constants import (
     COMPARISON_OPERATORS,
+    OHLCV_COLUMNS,
     tooltip_styles,
     df_input_parameters,
     dict_ops,
@@ -135,7 +136,7 @@ strategies_app.layout = dmc.MantineProvider(
             dcc.Store(id="param_instances", data={}, storage_type="memory"),
             dcc.Store(id="indicator_inputs_ready", data=False),
             # Footer в конце страницы
-            strategies_footer,
+            strategies_footer
         ],
         style={
             "min-height": "100vh",
@@ -265,6 +266,7 @@ strategies_app.clientside_callback(
                 "index": MATCH,
                 "value": ALL,
                 "label": ALL,
+                "raw": ALL,
             },
             "n_clicks",
         ),
@@ -364,6 +366,7 @@ strategies_app.clientside_callback(
 # === Server-side Callbacks
 # =========================================================
 
+
 @strategies_app.callback(
     Output(
         {
@@ -453,13 +456,13 @@ def render_options(
     selected_value = None
     if field_type == "column_dropdown":
         selected_value = (
-            (conditions_store_inputs or {}).get(store_key, {}).get("column", None)
+            (conditions_store_inputs or {}).get(store_key, {}).get("column_raw", None)
         )
     elif field_type == "column_or_custom_dropdown":
         selected_value = (
             (conditions_store_inputs or {})
             .get(store_key, {})
-            .get("column_or_custom", None)
+            .get("column_or_custom_raw", None)
         )
     elif field_type == "comparison_operator":
         selected_value = (
@@ -471,7 +474,21 @@ def render_options(
     # собираем кнопки
     children = []
     for opt in filtered:
-        is_selected = opt.get("value") == selected_value
+
+        # если выбран COMPARISON_OPERATORS или OHLCV_COLUMNS или custom
+        if selected_value in [i['value'] for i in COMPARISON_OPERATORS] + ['custom'] + list(OHLCV_COLUMNS):
+            opt_value = opt.get("value")
+            is_selected = (opt_value == selected_value)
+
+        # если выбран индикатор
+        elif isinstance(selected_value, str) and "_" in selected_value:
+            opt_raw = opt.get("raw")
+            is_selected = (opt_raw == selected_value)
+
+        # если ничего не выбрано
+        else:
+            is_selected = False
+
         button_style = {"justifyContent": "flex-start"}
         if is_selected:
             button_style.update(
@@ -490,6 +507,7 @@ def render_options(
             "field_type": container_id["type"],
             "value": opt.get("value"),
             "label": opt.get("display") or opt.get("label"),
+            "raw": opt.get("raw") or str(opt.get("value") or ""),
         }
 
         btn = dmc.Button(
@@ -518,7 +536,7 @@ def render_options(
 @strategies_app.callback(
     Output('conditions_store_inputs', 'data'),
     [
-        Input({'type': 'option-btn', 'strategy': ALL, 'condition': ALL, 'index': ALL, 'field_type': ALL, 'value': ALL, 'label': ALL}, 'n_clicks'),
+        Input({'type': 'option-btn', 'strategy': ALL, 'condition': ALL, 'index': ALL, 'field_type': ALL, 'value': ALL, 'label': ALL, "raw": ALL}, 'n_clicks'),
         Input({'type': 'comparison_operator', 'strategy': ALL, 'condition': ALL, 'index': ALL}, 'value'),
         Input({'type': 'column_or_custom_dropdown', 'strategy': ALL, 'condition': ALL, 'index': ALL}, 'value'),
         Input({'type': 'custom_input', 'strategy': ALL, 'condition': ALL, 'index': ALL}, 'value'),
@@ -593,12 +611,9 @@ def render_strategy_cards_cb(strategies, tab_parameters, conditions_inputs, stor
     strategies = strategies or []
     if not strategies:
         return []
-
     raw_options = (tab_parameters or {}).get("output_options", [])
     param_source_raw = stored_inputs_params or {}
     param_source = param_source_raw if isinstance(param_source_raw, dict) else {}
-    # print("raw_options callback:", raw_options)
-    # print("param_source callback:", param_source)
     output_options = build_options_template(
         raw_options=raw_options,
         param_source=param_source
@@ -613,7 +628,6 @@ def render_strategy_cards_cb(strategies, tab_parameters, conditions_inputs, stor
         output_options=output_options,
         param_source=param_source,
     )
-
 
 
 @strategies_app.callback(
@@ -725,7 +739,6 @@ def update_strategies(
         {"id": 1, "name": "1", "conditions_store": {"buy": 1, "sell": 1}}
     ]
     style = {"display": "none"}
-
     trig = ctx.triggered_id
     if trig is None:
         raise PreventUpdate
@@ -775,7 +788,6 @@ def update_strategies(
         store = dict(target.get("conditions_store", {"buy": 1, "sell": 1}))
         if cond not in store:
             store[cond] = 1
-
         if action == "add":
             store[cond] += 1
         elif action == "remove" and store[cond] > 1:
@@ -836,7 +848,6 @@ def sync_all(
 ):
     param_instances = (param_instances or {}).copy()
     stored_inputs = (stored_inputs or {}).copy()
-
     # Унифицированный парсер «что нас триггернуло»
     tid = getattr(ctx, "triggered_id", None)  # Dash>=2.9
     if tid is None:
@@ -912,7 +923,6 @@ def sync_all(
             stored_inputs = delete_indicator_keys(stored_inputs, ind)
             param_instances[ind] = 1
             return param_instances, stored_inputs
-
     # Ничего подходящего — без изменений
     return param_instances, stored_inputs
 
