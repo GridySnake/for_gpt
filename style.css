@@ -171,13 +171,13 @@ footer {
     .mantine-Grid-root {
         flex-direction: column !important;
     }
-    
+
     .mantine-GridCol-root {
         width: 100% !important;
         max-width: 100% !important;
         margin-bottom: 20px !important;
     }
-    
+
     .mantine-GridCol-root[style*="borderLeft"] {
         border-left: none !important;
         border-top: 1px solid #e1e5e9 !important;
@@ -189,11 +189,11 @@ footer {
     .mantine-Card-root {
         margin: 0 10px 20px 10px !important;
     }
-    
+
     .mantine-Stack-root {
         gap: 8px !important;
     }
-    
+
     .mantine-Button-root {
         width: 100% !important;
         margin-bottom: 10px !important;
@@ -219,10 +219,10 @@ footer {
     top: 20px;
     bottom: 20px;
     width: 1px;
-    background: linear-gradient(to bottom, 
-        transparent 0%, 
-        #e1e5e9 20%, 
-        #e1e5e9 80%, 
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        #e1e5e9 20%,
+        #e1e5e9 80%,
         transparent 100%);
 }
 
